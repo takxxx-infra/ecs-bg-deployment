@@ -47,5 +47,6 @@ terraform.rc
 # codex
 .codex/
 
-# docs
-docs/images/
+# docs and diagrams
+/docs/
+/diagram/
