@@ -3,7 +3,7 @@
 # ##################################################
 locals {
   frontend_app = {
-    desired_count = 1
+    desired_count = 0
   }
 }
 
