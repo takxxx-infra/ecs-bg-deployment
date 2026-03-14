@@ -1,4 +1,13 @@
 # ##################################################
+# Locals
+# ##################################################
+locals {
+  frontend_app = {
+    desired_count = 1
+  }
+}
+
+# ##################################################
 # ECS Cluster
 # ##################################################
 resource "aws_ecs_cluster" "main" {
@@ -17,7 +26,7 @@ resource "aws_ecs_service" "frontend_app" {
   name                               = "${local.project_name}-frontend-app"
   cluster                            = aws_ecs_cluster.main.arn
   task_definition                    = aws_ecs_task_definition.frontend_app.arn
-  desired_count                      = 0
+  desired_count                      = local.frontend_app.desired_count
   scheduling_strategy                = "REPLICA"
   availability_zone_rebalancing      = "ENABLED"
   platform_version                   = "LATEST"

@@ -6,7 +6,7 @@ Slack 上の Amazon Q Developer in chat applications と組み合わせて、ECS
 
 - `terraform/`: 技術記事用の AWS インフラ定義
 - `app/frontend/`: ECS にデプロイする単一コンテナの nginx アプリ
-- `scripts/publish_frontend_image.sh`: Docker build と ECR push を行う補助スクリプト
+- `Makefile`: frontend イメージの build / push 用ターゲット
 
 ## 前提条件
 
@@ -17,6 +17,9 @@ Slack 上の Amazon Q Developer in chat applications と組み合わせて、ECS
 
 ## クイックスタート
 
+ルートの `Makefile` は、`AWS CLI` の認証情報が設定されていれば `aws sts get-caller-identity` で `AWS_ACCOUNT_ID` を自動取得します。
+必要に応じて `AWS_PROFILE=your-profile` や `AWS_ACCOUNT_ID=123456789012` を明示指定できます。
+
 1. 変数ファイルのサンプルをコピーし、Slack 関連の値を設定します。
 
 ```sh
@@ -24,7 +27,7 @@ cd terraform
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-2. Terraform を初期化し、インフラを作成します。デフォルトでは `frontend_desired_count = 0` のため、ECR にイメージがまだ無い状態でも先に環境を作成できます。
+2. Terraform を初期化し、インフラを作成します。デフォルトでは ECS サービスの `desired_count = 0` にしてあるため、ECR にイメージがまだ無い状態でも先に環境を作成できます。
 
 ```sh
 terraform init
@@ -34,15 +37,14 @@ terraform apply
 3. 最初のフロントエンドイメージを build して push します。
 
 ```sh
-cd ..
-./scripts/publish_frontend_image.sh v1
+make release-image IMAGE_TAG=v1
 ```
 
-4. ECS サービスを起動します。
+4. `terraform/ecs.tf` の `desired_count` を `1` に変更し、ECS サービスを起動します。
 
 ```sh
 cd terraform
-terraform apply -var frontend_desired_count=1
+terraform apply
 ```
 
 5. Slack チャンネルに Amazon Q を招待します。
@@ -54,10 +56,14 @@ terraform apply -var frontend_desired_count=1
 6. 新しいイメージタグを push し、Blue/Green デプロイを発生させます。
 
 ```sh
-cd ..
-./scripts/publish_frontend_image.sh v2
+make release-image IMAGE_TAG=v2
+```
+
+そのあと `terraform/ecs_task_definition.tf` 側でイメージタグを `v2` に更新し、`terraform apply` を実行します。
+
+```sh
 cd terraform
-terraform apply -var frontend_desired_count=1 -var frontend_image_tag=v2
+terraform apply
 ```
 
 7. Slack 上でデプロイを承認、またはロールバックします。
